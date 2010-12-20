@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html  xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <script src="http://code.jquery.com/jquery-1.4.4.js"></script>
+    <!--[if IE]><script language="javascript" type="text/javascript" src="../excanvas.min.js"></script><![endif]-->
+    <script language="javascript" type="text/javascript" src="./flot/jquery.flot.js"></script>
+    <script>
+
+function Question(new_text){return {
+  text: new_text,
+  to_html: function (){
+    return "<p>" + this.text + "</p>";
+  }
+};}
+var questions = Array();
+
+function Product(new_product){return {
+  product: new_product,
+  score: 0,
+  popularity: 0,
+  to_html: function (){
+    return "<p>" + this.product + " score=" + this.score + " popularity=" + this.popularity + "</p>";
+  }
+};}
+var products =  Object();
+
+function Comparision(author, product_a, product_b, question, result){return {
+  author: author,
+  product_a: product_a,
+  product_b: product_b,
+  question: question,
+  result: result,
+  to_html: function (){
+    return "<p>" + this.author + ": " + this.question.text + " " + this.product_a.product + " vs " + this.product_b.product + ":" + this.result.product + "</p>";
+  },
+  score_products: function (){
+    this.product_a.popularity++;
+    this.product_b.popularity++;
+    if(typeof this.result == "object"){
+       if(this.result === this.product_a){
+           this.product_a.score++;
+           this.product_b.score--;
+       }
+       else{
+           this.product_a.score--;
+           this.product_b.score++;
+       }
+    }
+  }
+};}
+var comparisons = Array();
+
+questions[questions.length] = new Question("Which one looks best?");
+questions[questions.length] = new Question("Which one is best at Ironing?");
+questions[questions.length] = new Question("Which one cooks best?");
+questions[questions.length] = new Question("Which is the best cleaner?");
+
+products["Kyle"] = new Product("Kyle");
+products["Anne Widdlecoomb"] = new Product("Anne Widdlecoomb");
+products["Felicity Kendle"] = new Product("Felicity Kendle");
+products["Angelica Huston"] = new Product("Angelica Huston");
+
+comparisons[comparisons.length] = new Comparision("@leeprovoost", products["Kyle"], products["Anne Widdlecoomb"], questions[0], products["Kyle"]);
+comparisons[comparisons.length] = new Comparision("@leeprovoost", products["Kyle"], products["Anne Widdlecoomb"], questions[1], products["Anne Widdlecoomb"]);
+comparisons[comparisons.length] = new Comparision("@leeprovoost", products["Kyle"], products["Anne Widdlecoomb"], questions[2], products["Anne Widdlecoomb"]);
+comparisons[comparisons.length] = new Comparision("@leeprovoost", products["Kyle"], products["Anne Widdlecoomb"], questions[3], "");
+
+comparisons[comparisons.length] = new Comparision("@simondelliott", products["Kyle"], products["Felicity Kendle"], questions[0], products["Kyle"]);
+comparisons[comparisons.length] = new Comparision("@simondelliott", products["Kyle"], products["Felicity Kendle"], questions[1], products["Felicity Kendle"]);
+comparisons[comparisons.length] = new Comparision("@simondelliott", products["Kyle"], products["Felicity Kendle"], questions[2], products["Felicity Kendle"]);
+comparisons[comparisons.length] = new Comparision("@simondelliott", products["Kyle"], products["Felicity Kendle"], questions[3], products["Felicity Kendle"]);
+
+$(document).ready(function() {
+  //work out the score
+  for (var i in comparisons ){
+    var comp = comparisons[i];
+    comp.score_products();
+  }
+
+  var data = [];
+  var labels = [];
+  for (var i in products){
+    data.push([products[i].score, products[i].popularity] );
+    labels.push(products[i].product);
+  }
+  var d2 = [[0, 3], [4, 8], [8, 5], [9, 13]];
+  var p = $.plot($("#magic_map"), 
+    [{ data: data }],
+    {
+        series: {
+            lines: { show: false },
+            points: { show: true }
+        },
+        xaxis: {
+            ticks: 10,
+            min: -5,
+            max: 5
+        },
+        yaxis: {
+            ticks: 10,
+            min: 0,
+            max: 10
+        },
+        grid: {
+            backgroundColor: { colors: ["#fff", "#eee"] },
+            hoverable: true, clickable: true
+        }
+    });
+
+    $("#magic_map").bind("plotclick", function (event, pos, item) {
+        if (item) {
+            $("#selected_product").text("You clicked point " + labels[item.dataIndex] );
+            p.highlight(item.series, item.datapoint);
+        }
+    });
+
+    var j=0;
+    $.each(p.getData()[0].data, function(i, el){
+      var o = p.pointOffset({x: el[0], y: el[1]});
+      //$('<div class="data-point-label">' + el[1] + '</div>').css( {
+      $('<div class="label">' + labels[j++] + '</div>').css( {
+        position: 'absolute',
+        left: o.left + 6,
+        top: o.top - 10,
+        display: 'none'
+      }).appendTo(p.getPlaceholder()).fadeIn('slow');
+    });
+
+  for (var i in questions){
+    $("#questions").append(questions[i].to_html());
+  }
+
+  for (var i in products){
+    $("#products").append(products[i].to_html());
+  }
+
+  for (var i in comparisons){
+    $("#comparisions").append(comparisons[i].to_html());
+  }
+
+
+
+});
+
+    </script>
+     <style>
+#magic_map{
+  width: 800px;
+  height: 400px;
+  position: relative;
+}
+.label{
+  font-size:x-small;
+}
+    </style>
+ </head>
+  <body>
+    <h1>Magic Map - Wives</h1>
+    <div id="magic_map">
+      magic map
+    </div>
+    <div id="selected_product">
+        
+    </div>
+    <div id="questions">
+      <strong>Questions</strong>
+    </div>
+    <div id="products">
+      <strong>products</strong>
+    </div>
+    <div id="comparisions">
+      <strong>products</strong>
+    </div>
+  </body>
+</html>
